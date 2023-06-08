@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 var rates []*rate
@@ -20,6 +21,10 @@ func (rate *rate) String() string {
 	return fmt.Sprintf("%s TO GEL: %.4f GEL TO %s: %.4f", rate.currncy, rate.Buy, rate.currncy, rate.Sell)
 }
 
+func (rate *rate) httpString() string {
+	return fmt.Sprintf("<p>%s TO GEL: %.4f GEL TO %s: %.4f</p>", rate.currncy, rate.Buy, rate.currncy, rate.Sell)
+}
+
 func main() {
 	Client := &http.Client{}
 	currensySlice := []string{"USD", "EUR", "RUB", "GBP"}
@@ -30,6 +35,22 @@ func main() {
 	for _, doneRate := range rates {
 		fmt.Println(doneRate)
 	}
+	http.HandleFunc("/", showRates)
+	http.HandleFunc("/kill", killApp)
+	http.ListenAndServe(":8080", nil)
+}
+
+func showRates(w http.ResponseWriter, r *http.Request) {
+	var lines string
+	for _, doneRate := range rates {
+		lines += doneRate.httpString()
+	}
+	w.Write([]byte(lines))
+}
+
+func killApp(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("App whas stopt")
+	os.Exit(0)
 }
 
 func getRate(Client *http.Client, currency string) {
